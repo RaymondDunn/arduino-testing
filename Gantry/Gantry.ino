@@ -11,6 +11,13 @@ AccelStepper stepperY(AccelStepper::DRIVER, 10, 11);
 int limitSwitchX = 5;
 int limitSwitchY = 6;
 
+// define well location at starting point
+int well00_x = -100;
+int well00_y = -100;
+
+// define analog input
+luminometerPin = A0;
+
 void setup()
 {  
   // set motor params
@@ -35,6 +42,30 @@ void loop()
     setZeroPosition();
   }
   RUN = 0;
+
+  // example potential event loop
+  /*
+    if (user_input =='1')
+  {
+     StepForwardDefault();
+  }
+  else if(user_input =='2')
+  {
+    ReverseStepDefault();
+  }
+  else if(user_input =='3')
+  {
+    SmallStepMode();
+  }
+  else if(user_input =='4')
+  {
+    ForwardBackwardStep();
+  }
+  else
+  {
+    Serial.println("Invalid option entered.");
+  }
+  */
 
 }
 
@@ -78,4 +109,62 @@ void setZeroPosition(){
   stepperX.setCurrentPosition(0);
   stepperY.setCurrentPosition(0);
   
+}
+
+void moveGantry(stepper, position){
+
+  // move stepper to the position
+  stepper.move(position);
+
+  // block until motor gets there
+  while (stepper.distanceToGo() != 0){
+    stepper.run();
+  }
+}
+
+
+// function to move the scanner to a set point at well 1
+void prepareForPlateScan(){
+  
+  // separately move xy to well 0 using preset coords
+  moveGantry(stepperX, well00_x);
+  moveGantry(stepperY, well00_y);
+
+}
+
+
+// function to read analog output from photoluminometer
+int takeMeasurement(){
+  
+  // read the input pin
+  val = analogRead(luminometerPin);  
+
+  // return
+  return val;
+
+}
+
+
+// function to repeatedly take measurements and write output to serial point
+void rasterScan(stepper, direction, steps, stepSize){
+  
+  // directionality input checking
+  if (direction == 0){
+    direction = -1;
+  }
+  else if (direction == 1){
+    direction = 1;
+  }
+  else{
+    Serial.println("Illegal directionality set!");
+  }
+
+  // move gantry
+  for(int i=0; i<steps; i++){
+    moveGantry(stepper, stepSize * direction);
+    meas = takeMeasurement();
+    Serial.println(meas);
+  }
+
+
 }
