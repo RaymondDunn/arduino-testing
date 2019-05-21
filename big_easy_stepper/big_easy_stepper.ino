@@ -152,3 +152,7 @@ void ForwardBackwardStep()
   Serial.println();
 }
 
+// function to parse input string
+parseSerialInput(String user_input){
+  
+}
