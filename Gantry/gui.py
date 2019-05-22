@@ -15,7 +15,7 @@ fig = plt.figure('Gantry Controller', figsize=(9, 7))
 
 # add main window and adjust subplots
 sp_ax = fig.add_subplot(111)
-plt.subplots_adjust(left=0.3, top=0.8, bottom=0.2)
+plt.subplots_adjust(left=0.4, top=0.8, bottom=0.2)
 
 # connect to serial interface
 com = "COM4"
@@ -38,7 +38,7 @@ def writeMessage(msg):
 ## move gantry button
 # distance option
 move_gantry_pos_ax = plt.axes([0.05, 0.9, 0.08, 0.08])
-move_gantry_pos_tb = TextBox(move_gantry_pos_ax, 'dist:', initial='100')
+move_gantry_pos_tb = TextBox(move_gantry_pos_ax, 'dist:', initial='-500')
 widgetlist.append(move_gantry_pos_tb)
 
 # xy option
@@ -88,8 +88,25 @@ get_gantry_position_y_button = Button(get_gantry_position_y_ax, "Get y")
 get_gantry_position_y_button.on_clicked(submit_get_position_y)
 
 # do raster
+raster_xy_ax = plt.axes([0.05, 0.65, 0.05, 0.08])
+raster_xy_tb = TextBox(raster_xy_ax, 'x/y:', initial='y')
+raster_steps_ax = plt.axes([0.17, 0.65, 0.05, 0.08])
+raster_steps_tb = TextBox(raster_steps_ax, '#steps', initial='10')
+raster_stepsize_ax = plt.axes([0.29, 0.65, 0.05, 0.08])
+raster_stepsize_tb = TextBox(raster_stepsize_ax, 'stepSize', initial='-50')
 
+def submit_raster_scan(event):
+	xy = raster_xy_tb.text
+	steps = raster_steps_tb.text
+	stepsize = raster_stepsize_tb.text
 
+	# write message
+	print('Beginning raster scan at {} of {} by {}'.format(xy, steps, stepsize))
+	writeMessage('rasterScan,{},{},{}'.format(xy, steps, stepsize))
+
+raster_scan_button_ax = plt.axes([0.05, 0.55, 0.15, 0.08])
+raster_scan_button = Button(raster_scan_button_ax, 'Raster scan')
+raster_scan_button.on_clicked(submit_raster_scan)
 
 # show figure
 plt.show(block=False)

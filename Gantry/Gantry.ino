@@ -133,22 +133,11 @@ int takeMeasurement(){
 
 
 // function to repeatedly take measurements and write output to serial point
-void rasterScan(String stepper, int dir, int steps, int stepSize){
+void rasterScan(String stepper, int steps, int stepSize){
   
-  // directionality input checking
-  if ((dir == 0) || (dir == -1)){
-    dir = -1;
-  }
-  else if (dir == 1){
-    dir = 1;
-  }
-  else{
-    Serial.println("Illegal directionality set!");
-  }
-
   // move gantry
   for(int i=0; i<steps; i++){
-    moveGantry(stepper, stepSize * dir);
+    moveGantry(stepper, stepSize);
     int meas = takeMeasurement();
     Serial.println(meas);
   }
@@ -189,11 +178,10 @@ void parseSerialInput(String user_input){
   }
   else if (funcname == "rasterScan"){
     String stepperToMove = getValue(user_input, ',', 1);
-    int dir = getValue(user_input, ',', 2).toInt();
-    int steps = getValue(user_input, ',', 3).toInt();
-    int stepSize = getValue(user_input, ',', 4).toInt(); 
-    Serial.println("Beginning raster: " + stepperToMove + "; Direction: " + String(dir) + "; steps: " + String(steps) + "; stepSize: " + String(stepSize));
-    rasterScan(stepperToMove, dir, steps, stepSize);
+    int steps = getValue(user_input, ',', 2).toInt();
+    int stepSize = getValue(user_input, ',', 3).toInt(); 
+    Serial.println("Beginning raster: " + stepperToMove + "; steps: " + String(steps) + "; stepSize: " + String(stepSize));
+    rasterScan(stepperToMove, steps, stepSize);
     Serial.println("Done raster!");
   }
   else if (funcname == "takeMeasurement"){
