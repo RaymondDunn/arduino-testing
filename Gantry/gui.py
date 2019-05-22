@@ -3,6 +3,7 @@ import serial
 from matplotlib.widgets import Button, TextBox
 import time
 import datetime
+import csv
 
 
 # widgetlist to protect from garbage collection
@@ -18,19 +19,16 @@ fig = plt.figure('Gantry Controller', figsize=(9, 7))
 sp_ax = fig.add_subplot(111)
 plt.subplots_adjust(left=0.4, top=0.8, bottom=0.2)
 
-# decorate plot
+# decorate plot... how do we want to structure data?
 sp_ax.set_title('Luminometer measurements')
 sp_ax.set_xlabel('Position X')
 sp_ax.set_ylabel('Position Y')
-
-# value color translates to luminometer value
 #sp_ax.set_ylabel('Luminometer value')
 
 # connect to serial interface
 com = "COM4"
 print('Establishing serial connection on port {}'.format(com))
-#ser = serial.Serial(com, 9600, timeout=1)
-ser = []
+ser = serial.Serial(com, 9600, timeout=1)
 
 # helper function to write message to serial
 def writeMessage(msg):
@@ -135,8 +133,8 @@ def submit_save_measurelist(event):
     print('Saving existing data')
 
     # write measurelist to csv
-    now = str(datetime.datetime.now())
-    with open('measurelist_' +  now + '.csv', 'wb', newline='') as myfile:
+    now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    with open('measurelist_' +  now + '.csv', 'w') as myfile:
         writer = csv.writer(myfile)
         writer.writerow(measurelist)
 
@@ -151,7 +149,8 @@ def checkResponseForData(resp):
     delimiter = '$'
 
     # if there's data add it to our measure list and update display plot
-    # suggested data format: "$val,x,y,gain$"
+    # suggested data format: "$val,x,y,gain$" this covers the essentials
+
 
 
 # helper function to replot acccording to contents of measurelist
@@ -173,7 +172,7 @@ plt.show(block=False)
 while True:
 
     plt.pause(1)
-    #resp = ser.readline()
+    resp = ser.readline()
     resp = []
     if len(resp) > 0:
         checkResponseForData(resp)
