@@ -139,7 +139,7 @@ void rasterScan(String stepper, int steps, int stepSize){
   for(int i=0; i<steps; i++){
     moveGantry(stepper, stepSize);
     int meas = takeMeasurement();
-    Serial.println(meas);
+    Serial.println("$" + meas + "$");
   }
 }
 
