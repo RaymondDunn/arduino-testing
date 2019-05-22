@@ -196,6 +196,17 @@ void parseSerialInput(String user_input){
     rasterScan(stepperToMove, dir, steps, stepSize);
     Serial.println("Done raster!");
   }
+  else if (funcname == "takeMeasurement"){
+    int val = takeMeasurement();
+    Serial.println(val);
+  }
+  else if (funcname == "getGantryPosition"){
+    String stepper = getValue(user_input, ',', 1);
+    Serial.println("Getting gantry position at " + stepper);
+    long val = getGantryPosition(stepper);
+    Serial.println(val);
+
+  }
   else{
     Serial.println("Unrecognized input!");
   }
@@ -221,6 +232,24 @@ String getValue(String data, char separator, int index){
 
 // helper function to change speed
 void setGantrySpeed(int gantrySpeed){
-  stepperX.setSpeed(gantrySpeed);
-  stepperY.setSpeed(gantrySpeed);
+  stepperX.setMaxSpeed(gantrySpeed);
+  stepperY.setMaxSpeed(gantrySpeed);
+}
+
+// helper function to get current position
+long getGantryPosition(String stepper){
+
+  long pos = -9999;
+  if (stepper == "x"){
+    pos = stepperX.currentPosition(); 
+  }
+  else if (stepper == "y"){
+    pos = stepperY.currentPosition();
+  }
+  else{
+    Serial.println("Stepper "+ stepper + " not recognized in getGantryPosition!");
+  }
+
+  // return
+  return pos;
 }
