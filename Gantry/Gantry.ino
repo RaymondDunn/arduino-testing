@@ -41,7 +41,7 @@ void loop()
 
   while(Serial.available()){
     String user_input = Serial.readString();
-    Serial.println("Input: " + user_input);
+    //Serial.println("Input: " + user_input);
     parseSerialInput(user_input);
   }
   
@@ -134,12 +134,25 @@ int takeMeasurement(){
 
 // function to repeatedly take measurements and write output to serial point
 void rasterScan(String stepper, int steps, int stepSize){
+
+  // initialize measurement variables
+  int val = takeMeasurement();
+  int gain = getPhotoluminometerGain(); 
+  long x_pos = getGantryPosition("x");
+  long y_pos = getGantryPosition("y"); 
   
   // move gantry
   for(int i=0; i<steps; i++){
+
+    // move gantry
     moveGantry(stepper, stepSize);
-    int meas = takeMeasurement();
-    Serial.println("$" + meas + "$");
+
+    // get data
+    val = takeMeasurement();
+    gain = getPhotoluminometerGain(); 
+    x_pos = getGantryPosition("x");
+    y_pos = getGantryPosition("y");
+    sendMeasurementSerial(val, gain, x_pos, y_pos);
   }
 }
 
@@ -186,7 +199,11 @@ void parseSerialInput(String user_input){
   }
   else if (funcname == "takeMeasurement"){
     int val = takeMeasurement();
-    Serial.println(val);
+    int gain = getPhotoluminometerGain();
+    long x_pos = getGantryPosition("x");
+    long y_pos = getGantryPosition("y");
+    sendMeasurementSerial(val, gain, x_pos, y_pos);
+    //Serial.println(val);
   }
   else if (funcname == "getGantryPosition"){
     String stepper = getValue(user_input, ',', 1);
@@ -240,4 +257,17 @@ long getGantryPosition(String stepper){
 
   // return
   return pos;
+}
+
+// helper function to take 
+void sendMeasurementSerial(int measurement, int gain, long x_pos, long y_pos){
+
+  String msg = "$" + String(measurement) + ',' + String(gain) + ',' + String(x_pos) + ',' + String(y_pos) + '$';
+  Serial.println(msg);
+}
+
+// helper function to query the current state of gain
+int getPhotoluminometerGain(){
+
+  return 1;
 }

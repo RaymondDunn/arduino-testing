@@ -5,6 +5,8 @@ import time
 import datetime
 import csv
 
+# master variable to open the gui even if arduino isn't connected
+DEMO_MODE = False
 
 # widgetlist to protect from garbage collection
 widgetlist = []
@@ -14,21 +16,37 @@ measurelist = []
 
 # create figure
 fig = plt.figure('Gantry Controller', figsize=(9, 7))
-
-# add main window and adjust subplots
-sp_ax = fig.add_subplot(111)
 plt.subplots_adjust(left=0.4, top=0.8, bottom=0.2)
 
 # decorate plot... how do we want to structure data?
-sp_ax.set_title('Luminometer measurements')
-sp_ax.set_xlabel('Position X')
-sp_ax.set_ylabel('Position Y')
-#sp_ax.set_ylabel('Luminometer value')
+# plot for xy representation
+sp1_ax = fig.add_subplot(211)
+sp2_ax = fig.add_subplot(212)
+
+def decorate_plots():
+    sp1_ax.set_title('Luminometer measurements')
+    sp1_ax.set_xlabel('Position X')
+    sp1_ax.set_ylabel('Position Y')
+
+    # second figure for raw plotting
+    sp2_ax.set_xlabel('Measurement #')
+    sp2_ax.set_ylabel('Value')
+
+# make plots
+decorate_plots()
+
+# for coloring
+max_gain = 1
+sensor_range = 1200
+val_range = sensor_range * max_gain
+colors = plt.get_cmap('viridis', val_range).colors
 
 # connect to serial interface
 com = "COM4"
 print('Establishing serial connection on port {}'.format(com))
 ser = serial.Serial(com, 9600, timeout=1)
+if DEMO_MODE:
+    ser = []
 
 # helper function to write message to serial
 def writeMessage(msg):
@@ -39,9 +57,6 @@ def writeMessage(msg):
     # convert string to bytes
     ser.write(msg.encode())
 
-    # print output
-    #resp = ser.readline()
-    #print('Arduino: {}'.format(resp))
 
 ## move gantry button
 # distance option
@@ -122,7 +137,10 @@ def submit_clear_plot(event):
     measurelist = []
 
     # update display
-    updateDisplayPlot()
+    sp1_ax.cla()
+    sp2_ax.cla()
+    decorate_plots()
+    fig.canvas.draw()
 
 submit_clear_plot_ax = plt.axes([0.7, 0.05, 0.08, 0.08])
 submit_clear_plot_button = Button(submit_clear_plot_ax, 'Clear plot')
@@ -146,25 +164,51 @@ submit_save_measurelist_button.on_clicked(submit_save_measurelist)
 def checkResponseForData(resp):
 
     # measurement data will be embedded in a delimiter
-    delimiter = '$'
+    delim = '$'
+    resp_string = resp.decode("utf-8") 
 
     # if there's data add it to our measure list and update display plot
     # suggested data format: "$val,x,y,gain$" this covers the essentials
+    resp_string_split = resp_string.split(delim) 
 
+    #import pdb
+    #pdb.set_trace()
 
+    # if there's data embedded in the string grab it
+    if len(resp_string_split) > 1:
+
+        # grab data
+        data = resp_string_split[1].split(',')
+        measure = int(data[0])
+        gain = int(data[1])
+        x_pos = int(data[2])
+        y_pos = int(data[3])
+
+        # append as tuple to measure list
+        print('Received data! {}; {}; {}; {}'.format(measure, gain, x_pos, y_pos))
+        measurelist.append((measure, gain, x_pos, y_pos))
+        update_display_plot()
 
 # helper function to replot acccording to contents of measurelist
-def updateDisplayPlot():
+def update_display_plot():
 
     # plot
-    # how to incorporate notion of gain? choices here...
-    sp_ax.plot(measurelist)
+    # assuming we're only plotting the most recent point
+    m = measurelist[-1]
+
+    # get values
+    adj_val = m[0] * m[1]
+    x = m[2]
+    y = m[3]
+    c = colors[adj_val]
+
+    # plot
+    sp1_ax.scatter(x,y,color=c)
+    #sp2_ax.plot(len(measurelist), adj_val, color=c)
+    sp2_ax.plot(len(measurelist), adj_val, linestyle='--', marker='o')
 
     # redraw canvas
     fig.canvas.draw()
-
-
-
 
 # show figure
 plt.show(block=False)
@@ -172,8 +216,17 @@ plt.show(block=False)
 while True:
 
     plt.pause(1)
-    resp = ser.readline()
-    resp = []
-    if len(resp) > 0:
-        checkResponseForData(resp)
-        print('Arduino: {}'.format(resp))
+
+    # while there's data to read, keep reading it
+    while True:
+
+        if DEMO_MODE:
+            resp = []
+        else:
+            resp = ser.readline()
+        if len(resp) > 0:
+            checkResponseForData(resp)
+            print('Arduino: {}'.format(resp))
+        else:
+            # if there's no data to read break from inner loop
+            break
