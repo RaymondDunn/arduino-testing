@@ -6,7 +6,7 @@ import datetime
 import csv
 
 # master variable to open the gui even if arduino isn't connected
-DEMO_MODE = False
+DEMO_MODE = True
 
 # widgetlist to protect from garbage collection
 widgetlist = []
@@ -43,10 +43,13 @@ colors = plt.get_cmap('viridis', val_range).colors
 
 # connect to serial interface
 com = "COM4"
-print('Establishing serial connection on port {}'.format(com))
-ser = serial.Serial(com, 9600, timeout=1)
 if DEMO_MODE:
+    print('Running in DEMO_MODE')
     ser = []
+else:
+    print('Establishing serial connection on port {}'.format(com))
+    ser = serial.Serial(com, 9600, timeout=1)
+
 
 # helper function to write message to serial
 def writeMessage(msg):
@@ -130,6 +133,27 @@ def submit_raster_scan(event):
 raster_scan_button_ax = plt.axes([0.05, 0.55, 0.15, 0.08])
 raster_scan_button = Button(raster_scan_button_ax, 'Raster scan')
 raster_scan_button.on_clicked(submit_raster_scan)
+
+# do full plate scan (xy raster)
+plate_scan_numx_ax = plt.axes([0.05, 0.45, 0.05, 0.08])
+plate_scan_numx_tb = TextBox(plate_scan_numx_ax, '#x:', initial='32')
+plate_scan_numy_ax = plt.axes([0.17, 0.45, 0.05, 0.08])
+plate_scan_numy_tb = TextBox(plate_scan_numy_ax, '#y', initial='12')
+plate_scan_stepsize_ax = plt.axes([0.29, 0.45, 0.05, 0.08])
+plate_scan_stepsize_tb = TextBox(plate_scan_stepsize_ax, 'stepSize', initial='-50')
+
+def submit_plate_scan(event):
+    numx = plate_scan_numx_tb.text
+    numy = plate_scan_numy_tb.text
+    stepsize = plate_scan_stepsize_tb.text
+
+    # write message
+    print('Beginning full plate scan of x {} by {} at {} steps'.format(numx, numy, stepsize))
+    writeMessage('raster2DScan,{},{},{}'.format(numx, numy, stepsize))
+
+full_plate_scan_button_ax = plt.axes([0.05, 0.35, 0.15, 0.08])
+full_plate_scan_button = Button(full_plate_scan_button_ax, 'Full plate scan')
+full_plate_scan_button.on_clicked(submit_plate_scan)
 
 # add clear plot button
 def submit_clear_plot(event):
