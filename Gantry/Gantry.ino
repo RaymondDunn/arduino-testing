@@ -136,7 +136,7 @@ int takeMeasurement(){
 void rasterScan(String stepper, int steps, int stepSize){
 
   // initialize measurement variables
-  int val = takeMeasurement();
+  int val = takeMeasurement();    // this is also necessary to clear photoluminometer of dark current
   int gain = getPhotoluminometerGain(); 
   long x_pos = getGantryPosition("x");
   long y_pos = getGantryPosition("y"); 
@@ -144,15 +144,15 @@ void rasterScan(String stepper, int steps, int stepSize){
   // move gantry
   for(int i=0; i<steps; i++){
 
-    // move gantry
-    moveGantry(stepper, stepSize);
-
     // get data
     val = takeMeasurement();
     gain = getPhotoluminometerGain(); 
     x_pos = getGantryPosition("x");
     y_pos = getGantryPosition("y");
     sendMeasurementSerial(val, gain, x_pos, y_pos);
+
+    // move gantry
+    moveGantry(stepper, stepSize);
   }
 }
 
@@ -183,6 +183,21 @@ void parseSerialInput(String user_input){
     setZeroPosition();
     moveGantry("x", well00_x);
     moveGantry("y", well00_y);
+  }
+  else if funcname == "raster2DScan"{
+
+    // make sure we are zerod
+    Serial.println("Preparing for plate scan...");
+    setZeroPosition();
+    moveGantry("x", well00_x);
+    moveGantry("y", well00_y);
+
+    // get values and run
+    int stepsX = getValue(user_input, ',', 1).toInt();
+    int stepsY = getValue(user_input, ',', 2).toInt();
+    int stepSize = getValue(user_input, ',', 3).toInt();
+    Serial.println("Beginning raster2D:  " + String(stepsX) + " by " + String(stepsY) + " with stepSize: " + String(stepSize));
+    raster2DScan(stepsX, stepsY, stepSize);
   }
   else if (funcname == "setSpeed"){
     int spd = getValue(user_input, ',', 1).toInt();
@@ -270,4 +285,23 @@ void sendMeasurementSerial(int measurement, int gain, long x_pos, long y_pos){
 int getPhotoluminometerGain(){
 
   return 1;
+}
+
+// function for a 2D raster i.e. a full plate scan
+void raster2DScan(int stepsX, int stepsY, int stepSize){
+  
+  // raster in y taking steps in x
+  for(int i=0; i < stepsX; i++){
+
+    // raster in Y direction
+    rasterScan("y", stepsY, stepSize);
+
+    // take x step
+    moveGantry("x", stepSize);
+
+    // raster in -Y direction
+    rasterScan("y", stepsY, -stepSize);
+
+  }  
+
 }
