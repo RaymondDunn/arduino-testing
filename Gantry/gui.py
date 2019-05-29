@@ -6,7 +6,7 @@ import datetime
 import csv
 
 # master variable to open the gui even if arduino isn't connected
-DEMO_MODE = True
+DEMO_MODE = False
 
 # widgetlist to protect from garbage collection
 widgetlist = []
@@ -64,7 +64,7 @@ def writeMessage(msg):
 ## move gantry button
 # distance option
 move_gantry_pos_ax = plt.axes([0.05, 0.9, 0.08, 0.08])
-move_gantry_pos_tb = TextBox(move_gantry_pos_ax, 'dist:', initial='-500')
+move_gantry_pos_tb = TextBox(move_gantry_pos_ax, 'dist:', initial='-513')
 widgetlist.append(move_gantry_pos_tb)
 
 # xy option
@@ -113,13 +113,25 @@ get_gantry_position_y_ax = plt.axes([0.15, 0.15, 0.08, 0.08])
 get_gantry_position_y_button = Button(get_gantry_position_y_ax, "Get y")
 get_gantry_position_y_button.on_clicked(submit_get_position_y)
 
+# change acceleration
+gantry_acceleration_tb_ax = plt.axes([0.4, 0.05, 0.08, 0.08])
+gantry_acceleration_tb = TextBox(gantry_acceleration_tb_ax, 'accel.', initial='3000')
+
+def submit_set_gantry_acceleration(event):
+    accel = gantry_acceleration_tb.text
+    writeMessage('setGantryAcceleration,{}'.format(accel))
+
+gantry_acceleration_button_ax = plt.axes([0.5, 0.05, 0.1, 0.08])
+gantry_acceleration_button = Button(gantry_acceleration_button_ax, 'set accel.')
+gantry_acceleration_button.on_clicked(submit_set_gantry_acceleration)
+
 # do raster
 raster_xy_ax = plt.axes([0.05, 0.65, 0.05, 0.08])
 raster_xy_tb = TextBox(raster_xy_ax, 'x/y:', initial='y')
 raster_steps_ax = plt.axes([0.17, 0.65, 0.05, 0.08])
-raster_steps_tb = TextBox(raster_steps_ax, '#steps', initial='10')
+raster_steps_tb = TextBox(raster_steps_ax, '#steps', initial='16')
 raster_stepsize_ax = plt.axes([0.29, 0.65, 0.05, 0.08])
-raster_stepsize_tb = TextBox(raster_stepsize_ax, 'stepSize', initial='-50')
+raster_stepsize_tb = TextBox(raster_stepsize_ax, 'stepSize', initial='-513')
 
 def submit_raster_scan(event):
     xy = raster_xy_tb.text
@@ -136,11 +148,11 @@ raster_scan_button.on_clicked(submit_raster_scan)
 
 # do full plate scan (xy raster)
 plate_scan_numx_ax = plt.axes([0.05, 0.45, 0.05, 0.08])
-plate_scan_numx_tb = TextBox(plate_scan_numx_ax, '#x:', initial='32')
+plate_scan_numx_tb = TextBox(plate_scan_numx_ax, '#x:', initial='24')
 plate_scan_numy_ax = plt.axes([0.17, 0.45, 0.05, 0.08])
-plate_scan_numy_tb = TextBox(plate_scan_numy_ax, '#y', initial='12')
+plate_scan_numy_tb = TextBox(plate_scan_numy_ax, '#y', initial='16')
 plate_scan_stepsize_ax = plt.axes([0.29, 0.45, 0.05, 0.08])
-plate_scan_stepsize_tb = TextBox(plate_scan_stepsize_ax, 'stepSize', initial='-50')
+plate_scan_stepsize_tb = TextBox(plate_scan_stepsize_ax, 'stepSize', initial='-513')
 
 def submit_plate_scan(event):
     numx = plate_scan_numx_tb.text

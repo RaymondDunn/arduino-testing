@@ -13,8 +13,8 @@ int limitSwitchX = 5;
 int limitSwitchY = 6;
 
 // define well location at starting point
-int well00_x = -4000;
-int well00_y = -4000;
+int well00_x = 0;
+int well00_y = 0;
 
 // define analog input
 int luminometerPin = A0;
@@ -33,6 +33,9 @@ void setup()
 
   // initialize serial interface
   Serial.begin(9600);
+
+  // initialize gantry to idle
+  idleGantry();
 }
 
 
@@ -42,7 +45,12 @@ void loop()
   while(Serial.available()){
     String user_input = Serial.readString();
     //Serial.println("Input: " + user_input);
+
+    // main event loop
+    // upshift and downshift to conserve power
+    activateGantry();
     parseSerialInput(user_input);
+    idleGantry();
   }
   
 }
@@ -142,7 +150,7 @@ void rasterScan(String stepper, int steps, int stepSize){
   long y_pos = getGantryPosition("y"); 
   
   // move gantry
-  for(int i=0; i<steps; i++){
+  for(int i=0; i<steps-1; i++){
 
     // get data
     val = takeMeasurement();
@@ -154,6 +162,13 @@ void rasterScan(String stepper, int steps, int stepSize){
     // move gantry
     moveGantry(stepper, stepSize);
   }
+
+  // do one last scan for last well
+  val = takeMeasurement();
+  gain = getPhotoluminometerGain(); 
+  x_pos = getGantryPosition("x");
+  y_pos = getGantryPosition("y");
+  sendMeasurementSerial(val, gain, x_pos, y_pos);
 }
 
 // function to parse input string
@@ -184,7 +199,7 @@ void parseSerialInput(String user_input){
     moveGantry("x", well00_x);
     moveGantry("y", well00_y);
   }
-  else if funcname == "raster2DScan"{
+  else if (funcname == "raster2DScan"){
 
     // make sure we are zerod
     Serial.println("Preparing for plate scan...");
@@ -226,6 +241,11 @@ void parseSerialInput(String user_input){
     long val = getGantryPosition(stepper);
     Serial.println(val);
 
+  }
+  else if (funcname == "setGantryAcceleration"){
+    Serial.println("Changing gantry acceleration!");
+    int acceleration = getValue(user_input, ',', 1).toInt();
+    setGantryAcceleration(acceleration);
   }
   else{
     Serial.println("Unrecognized input!");
@@ -291,7 +311,7 @@ int getPhotoluminometerGain(){
 void raster2DScan(int stepsX, int stepsY, int stepSize){
   
   // raster in y taking steps in x
-  for(int i=0; i < stepsX; i++){
+  for(int i=0; i < stepsX/2; i++){
 
     // raster in Y direction
     rasterScan("y", stepsY, stepSize);
@@ -304,4 +324,21 @@ void raster2DScan(int stepsX, int stepsY, int stepSize){
 
   }  
 
+}
+
+void setGantryAcceleration(int acceleration){
+
+  stepperX.setAcceleration(acceleration);
+  stepperY.setAcceleration(acceleration);
+  
+}
+
+void idleGantry(){
+  stepperX.disableOutputs();
+  stepperY.disableOutputs();
+}
+
+void activateGantry(){
+  stepperX.enableOutputs();
+  stepperY.enableOutputs();
 }
