@@ -6,7 +6,7 @@ import datetime
 import csv
 
 # master variable to open the gui even if arduino isn't connected
-DEMO_MODE = False
+DEMO_MODE = True
 
 # widgetlist to protect from garbage collection
 widgetlist = []
@@ -114,16 +114,28 @@ get_gantry_position_y_button = Button(get_gantry_position_y_ax, "Get y")
 get_gantry_position_y_button.on_clicked(submit_get_position_y)
 
 # change acceleration
-gantry_acceleration_tb_ax = plt.axes([0.4, 0.05, 0.08, 0.08])
+gantry_acceleration_tb_ax = plt.axes([0.4, 0.9, 0.08, 0.08])
 gantry_acceleration_tb = TextBox(gantry_acceleration_tb_ax, 'accel.', initial='3000')
 
 def submit_set_gantry_acceleration(event):
     accel = gantry_acceleration_tb.text
     writeMessage('setGantryAcceleration,{}'.format(accel))
 
-gantry_acceleration_button_ax = plt.axes([0.5, 0.05, 0.1, 0.08])
-gantry_acceleration_button = Button(gantry_acceleration_button_ax, 'set accel.')
+gantry_acceleration_button_ax = plt.axes([0.5, 0.9, 0.1, 0.08])
+gantry_acceleration_button = Button(gantry_acceleration_button_ax, 'Set accel.')
 gantry_acceleration_button.on_clicked(submit_set_gantry_acceleration)
+
+# change photoluminometer gain
+pl_gain_tb_ax = plt.axes([0.4, 0.05, 0.08, 0.08])
+pl_gain_tb = TextBox(pl_gain_tb_ax, 'gain', initial='1')
+
+def submit_set_pl_gain(event):
+    gain = pl_gain_tb.text
+    writeMessage('setPhotoluminometerGain,{}'.format(gain))
+
+pl_gain_button_ax = plt.axes([0.5, 0.05, 0.1, 0.08])
+pl_gain_button = Button(pl_gain_button_ax, 'Set gain')
+pl_gain_button.on_clicked(submit_set_pl_gain)
 
 # do raster
 raster_xy_ax = plt.axes([0.05, 0.65, 0.05, 0.08])

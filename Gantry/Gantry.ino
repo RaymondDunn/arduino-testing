@@ -19,13 +19,19 @@ int well00_y = 0;
 // define analog input
 int luminometerPin = A0;
 
+// define digital potentiometer address
+byte potentiometerAddress = 0x01;
+int CS = 10;
+int plGain = 1;
+setPhotoluminometerGain(1);
+
 void setup()
 {  
   // set motor params
   stepperX.setMaxSpeed(1000);
   stepperY.setMaxSpeed(1000);
-  stepperX.setAcceleration(3000);
-  stepperY.setAcceleration(3000);
+  stepperX.setAcceleration(1000);
+  stepperY.setAcceleration(1000);
 
   // set limit switch params
   pinMode(limitSwitchX, INPUT_PULLUP);
@@ -33,9 +39,6 @@ void setup()
 
   // initialize serial interface
   Serial.begin(9600);
-
-  // initialize gantry to idle
-  idleGantry();
 }
 
 
@@ -45,12 +48,7 @@ void loop()
   while(Serial.available()){
     String user_input = Serial.readString();
     //Serial.println("Input: " + user_input);
-
-    // main event loop
-    // upshift and downshift to conserve power
-    activateGantry();
     parseSerialInput(user_input);
-    idleGantry();
   }
   
 }
@@ -150,7 +148,7 @@ void rasterScan(String stepper, int steps, int stepSize){
   long y_pos = getGantryPosition("y"); 
   
   // move gantry
-  for(int i=0; i<steps-1; i++){
+  for(int i=0; i<steps; i++){
 
     // get data
     val = takeMeasurement();
@@ -162,13 +160,6 @@ void rasterScan(String stepper, int steps, int stepSize){
     // move gantry
     moveGantry(stepper, stepSize);
   }
-
-  // do one last scan for last well
-  val = takeMeasurement();
-  gain = getPhotoluminometerGain(); 
-  x_pos = getGantryPosition("x");
-  y_pos = getGantryPosition("y");
-  sendMeasurementSerial(val, gain, x_pos, y_pos);
 }
 
 // function to parse input string
@@ -242,10 +233,11 @@ void parseSerialInput(String user_input){
     Serial.println(val);
 
   }
-  else if (funcname == "setGantryAcceleration"){
-    Serial.println("Changing gantry acceleration!");
-    int acceleration = getValue(user_input, ',', 1).toInt();
-    setGantryAcceleration(acceleration);
+  else if (funcname == "setPhotoluminometerGain"){
+    int gain = getValue(user_input, ',', 1).toInt();
+    Serial.println("Setting photoluminometer gain to " + String(gain));
+    setPhotoluminometerGain(gain);
+
   }
   else{
     Serial.println("Unrecognized input!");
@@ -304,7 +296,20 @@ void sendMeasurementSerial(int measurement, int gain, long x_pos, long y_pos){
 // helper function to query the current state of gain
 int getPhotoluminometerGain(){
 
-  return 1;
+  return plGain;
+}
+
+// helper function to set photoluminometer gain with digital potentiometer
+void setPhotoluminometerGain(int gain){
+  
+  // transfer to digital potentiometer
+  digitalWrite(CS, LOW);
+  SPI.transfer(address);
+  SPI.transfer(gain);
+  digitalWrite(CS, HIGH);
+  
+  // update global variable containing photoluminometerGain
+  plGain = gain;
 }
 
 // function for a 2D raster i.e. a full plate scan
@@ -324,21 +329,4 @@ void raster2DScan(int stepsX, int stepsY, int stepSize){
 
   }  
 
-}
-
-void setGantryAcceleration(int acceleration){
-
-  stepperX.setAcceleration(acceleration);
-  stepperY.setAcceleration(acceleration);
-  
-}
-
-void idleGantry(){
-  stepperX.disableOutputs();
-  stepperY.disableOutputs();
-}
-
-void activateGantry(){
-  stepperX.enableOutputs();
-  stepperY.enableOutputs();
 }
