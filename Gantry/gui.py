@@ -6,7 +6,7 @@ import datetime
 import csv
 
 # master variable to open the gui even if arduino isn't connected
-DEMO_MODE = True
+DEMO_MODE = False
 
 # widgetlist to protect from garbage collection
 widgetlist = []
@@ -36,8 +36,8 @@ def decorate_plots():
 decorate_plots()
 
 # for coloring
-max_gain = 1
-sensor_range = 1200
+max_gain = 127
+sensor_range = 1000
 val_range = sensor_range * max_gain
 colors = plt.get_cmap('viridis', val_range).colors
 
@@ -245,7 +245,7 @@ def update_display_plot():
     m = measurelist[-1]
 
     # get values
-    adj_val = m[0] * m[1]
+    adj_val = m[0]
     x = m[2]
     y = m[3]
     c = colors[adj_val]

@@ -1,8 +1,10 @@
 import csv
 import os
+import matplotlib.pyplot as plt
+
 
 # get data
-p1_filename = "measurelist_2019_05_22_13_29_34.csv"
+p1_filename = "measurelist_2019_05_29_17_21_29.csv"
 
 # get path info
 cwd = os.getcwd()

@@ -1,4 +1,5 @@
 #include <AccelStepper.h>
+#include <SPI.h>
 
 // overall loop control
 int RUN = 1;
@@ -6,7 +7,7 @@ int INPUT_SIZE = 30;
 
 // Define a stepper and the pins it will use
 AccelStepper stepperX(AccelStepper::DRIVER, 8, 9);
-AccelStepper stepperY(AccelStepper::DRIVER, 10, 11);
+AccelStepper stepperY(AccelStepper::DRIVER, 3, 4);
 
 // define limit switch hardware inputs
 int limitSwitchX = 5;
@@ -20,18 +21,17 @@ int well00_y = 0;
 int luminometerPin = A0;
 
 // define digital potentiometer address
-byte potentiometerAddress = 0x01;
-int CS = 10;
-int plGain = 1;
-setPhotoluminometerGain(1);
+byte potentiometerAddress = 0x00;
+int CSPin = 10;
+int plGain = 0;
 
 void setup()
 {  
   // set motor params
   stepperX.setMaxSpeed(1000);
   stepperY.setMaxSpeed(1000);
-  stepperX.setAcceleration(1000);
-  stepperY.setAcceleration(1000);
+  stepperX.setAcceleration(3000);
+  stepperY.setAcceleration(3000);
 
   // set limit switch params
   pinMode(limitSwitchX, INPUT_PULLUP);
@@ -39,11 +39,25 @@ void setup()
 
   // initialize serial interface
   Serial.begin(9600);
+
+  // set gain appropriately
+  SPI.begin(); // wake up the SPI bus.
+  SPI.setBitOrder(MSBFIRST);
+  setPhotoluminometerGain(1);
+
+  // set master pin to 10
+  // for potentiometer
+  // this is arduino chip specific
+  pinMode(CSPin, OUTPUT);
+  
 }
 
 
 void loop()
 {
+
+  // stream measurement
+  // streamMeasurement();
 
   while(Serial.available()){
     String user_input = Serial.readString();
@@ -113,6 +127,9 @@ void moveGantry(String stepper, int pos){
     stepperX.run();
     stepperY.run();
   }
+
+  // delay for 10ms
+  delay(10);
 }
 
 
@@ -128,9 +145,21 @@ void prepareForPlateScan(){
 
 // function to read analog output from photoluminometer
 int takeMeasurement(){
-  
-  // read the input pin
-  int val = analogRead(luminometerPin);  
+
+  // initialize val
+  int val = 0;
+
+  // take average of 10 measurements
+  int measToAverage = 10;
+  for(int i=0; i<measToAverage; i++){
+
+    // read the input pin
+    val = val + analogRead(luminometerPin); 
+    delay(20);
+  }
+
+  // avg
+  val = val / measToAverage;
 
   // return
   return val;
@@ -148,7 +177,7 @@ void rasterScan(String stepper, int steps, int stepSize){
   long y_pos = getGantryPosition("y"); 
   
   // move gantry
-  for(int i=0; i<steps; i++){
+  for(int i=0; i<steps-1; i++){
 
     // get data
     val = takeMeasurement();
@@ -160,6 +189,13 @@ void rasterScan(String stepper, int steps, int stepSize){
     // move gantry
     moveGantry(stepper, stepSize);
   }
+
+    // get data
+    val = takeMeasurement();
+    gain = getPhotoluminometerGain(); 
+    x_pos = getGantryPosition("x");
+    y_pos = getGantryPosition("y");
+    sendMeasurementSerial(val, gain, x_pos, y_pos);
 }
 
 // function to parse input string
@@ -291,6 +327,7 @@ void sendMeasurementSerial(int measurement, int gain, long x_pos, long y_pos){
 
   String msg = "$" + String(measurement) + ',' + String(gain) + ',' + String(x_pos) + ',' + String(y_pos) + '$';
   Serial.println(msg);
+  //Serial.println(measurement);
 }
 
 // helper function to query the current state of gain
@@ -303,13 +340,14 @@ int getPhotoluminometerGain(){
 void setPhotoluminometerGain(int gain){
   
   // transfer to digital potentiometer
-  digitalWrite(CS, LOW);
-  SPI.transfer(address);
+  //digitalWrite(CSPin, LOW);
+  SPI.transfer(potentiometerAddress);
   SPI.transfer(gain);
-  digitalWrite(CS, HIGH);
+  //digitalWrite(CSPin, HIGH);
   
   // update global variable containing photoluminometerGain
   plGain = gain;
+  
 }
 
 // function for a 2D raster i.e. a full plate scan
@@ -328,5 +366,15 @@ void raster2DScan(int stepsX, int stepsY, int stepSize){
     rasterScan("y", stepsY, -stepSize);
 
   }  
+
+}
+
+void streamMeasurement(){
+
+  while (1){
+    int val = analogRead(luminometerPin);   
+    Serial.println(val);
+    delay(50);
+  }
 
 }
