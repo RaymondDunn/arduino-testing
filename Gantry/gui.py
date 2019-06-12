@@ -14,6 +14,9 @@ widgetlist = []
 # measurement list
 measurelist = []
 
+# step size default
+stepSizeDefault = 515
+
 # create figure
 fig = plt.figure('Gantry Controller', figsize=(9, 7))
 plt.subplots_adjust(left=0.4, top=0.8, bottom=0.2)
@@ -64,7 +67,7 @@ def writeMessage(msg):
 ## move gantry button
 # distance option
 move_gantry_pos_ax = plt.axes([0.05, 0.9, 0.08, 0.08])
-move_gantry_pos_tb = TextBox(move_gantry_pos_ax, 'dist:', initial='-513')
+move_gantry_pos_tb = TextBox(move_gantry_pos_ax, 'dist:', initial=str(stepSizeDefault))
 widgetlist.append(move_gantry_pos_tb)
 
 # xy option
@@ -143,7 +146,7 @@ raster_xy_tb = TextBox(raster_xy_ax, 'x/y:', initial='y')
 raster_steps_ax = plt.axes([0.17, 0.65, 0.05, 0.08])
 raster_steps_tb = TextBox(raster_steps_ax, '#steps', initial='16')
 raster_stepsize_ax = plt.axes([0.29, 0.65, 0.05, 0.08])
-raster_stepsize_tb = TextBox(raster_stepsize_ax, 'stepSize', initial='-513')
+raster_stepsize_tb = TextBox(raster_stepsize_ax, 'stepSize', initial=str(stepSizeDefault))
 
 def submit_raster_scan(event):
     xy = raster_xy_tb.text
@@ -164,7 +167,7 @@ plate_scan_numx_tb = TextBox(plate_scan_numx_ax, '#x:', initial='24')
 plate_scan_numy_ax = plt.axes([0.17, 0.45, 0.05, 0.08])
 plate_scan_numy_tb = TextBox(plate_scan_numy_ax, '#y', initial='16')
 plate_scan_stepsize_ax = plt.axes([0.29, 0.45, 0.05, 0.08])
-plate_scan_stepsize_tb = TextBox(plate_scan_stepsize_ax, 'stepSize', initial='-513')
+plate_scan_stepsize_tb = TextBox(plate_scan_stepsize_ax, 'stepSize', initial=str(stepSizeDefault))
 
 def submit_plate_scan(event):
     numx = plate_scan_numx_tb.text
@@ -182,7 +185,7 @@ full_plate_scan_button.on_clicked(submit_plate_scan)
 # add clear plot button
 def submit_clear_plot(event):
     print('Clearing existing data...')
-    measurelist = []
+    measurelist.clear()
 
     # update display
     sp1_ax.cla()

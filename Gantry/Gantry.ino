@@ -57,7 +57,7 @@ void loop()
 {
 
   // stream measurement
-  // streamMeasurement();
+  //streamMeasurement();
 
   while(Serial.available()){
     String user_input = Serial.readString();
@@ -155,7 +155,7 @@ int takeMeasurement(){
 
     // read the input pin
     val = val + analogRead(luminometerPin); 
-    delay(20);
+    delay(50);
   }
 
   // avg
